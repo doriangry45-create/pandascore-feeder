@@ -1,0 +1,81 @@
+{
+  "builds": [
+    {
+      "src": "api/*.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/debug_pandascore",
+      "dest": "api/debug_pandascore.py",
+      "continue": true,
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type"
+      }
+    },
+    {
+      "src": "/api/matchstats",
+      "dest": "api/matchstats.py",
+      "continue": true,
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type"
+      }
+    },
+    {
+      "src": "/api/predict",
+      "dest": "api/predict.py",
+      "continue": true,
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type"
+      }
+    },
+    {
+      "src": "/api/analyze",
+      "dest": "api/analyze.py",
+      "continue": true,
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type"
+      }
+    },
+    {
+      "src": "/api/teams",
+      "dest": "api/teams.py",
+      "continue": true,
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type"
+      }
+    },
+    {
+      "src": "/api",
+      "dest": "api/index.py",
+      "continue": true,
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type"
+      }
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "public": true,
+  "github": {
+    "enabled": true,
+    "silent": true
+  }
+}

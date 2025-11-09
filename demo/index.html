@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PandaScore Feeder — Pusher Demo</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px}
+    input,button{padding:8px;margin:4px}
+    #log{white-space:pre-wrap;border:1px solid #ddd;padding:12px;height:60vh;overflow:auto}
+    .controls{margin-bottom:12px}
+  </style>
+  <script src="https://js.pusher.com/8.0/pusher.min.js"></script>
+</head>
+<body>
+  <script src="/demo/pusher_public.js"></script>
+  <h1>Pusher demo — matches</h1>
+  <p>Bu sayfa, `matches` kanalını ve seçtiğiniz bir <code>match-&lt;id&gt;</code> kanalını dinler. Pusher public key'inizi girin (projeden alabilirsiniz).</p>
+
+  <div class="controls">
+    <label>PUSHER_KEY: <input id="key" placeholder="PUSHER_KEY" /></label>
+    <label>Cluster: <input id="cluster" placeholder="eu" value="eu" style="width:80px" /></label>
+    <button id="connect">Connect</button>
+    <button id="disconnect" disabled>Disconnect</button>
+  </div>
+
+  <div class="controls">
+    <label>Subscribe to match id: <input id="matchId" placeholder="12345" style="width:120px" /></label>
+    <button id="sub">Subscribe</button>
+    <button id="unsub">Unsubscribe</button>
+  </div>
+
+  <div id="log"></div>
+
+  <script>
+    let pusher = null;
+    let channels = {};
+    const log = (m)=>{
+      const el = document.getElementById('log');
+      el.textContent = new Date().toISOString() + ' — ' + m + '\n' + el.textContent;
+    }
+
+    async function doConnect(key, cluster){
+      try{
+        Pusher.logToConsole = false;
+        pusher = new Pusher(key, { cluster: cluster });
+
+        // listen general matches channel
+        const matches = pusher.subscribe('matches');
+        matches.bind('list-update', (data)=>{
+          log('matches:list-update — ' + JSON.stringify(data));
+        });
+
+        document.getElementById('connect').disabled = true;
+        document.getElementById('disconnect').disabled = false;
+        log('Connected to Pusher cluster=' + cluster);
+      }catch(e){
+        log('Connection error: ' + e.message);
+        alert('Pusher bağlantı hatası: ' + e.message);
+      }
+    }
+
+    document.getElementById('connect').addEventListener('click', ()=>{
+      const key = document.getElementById('key').value.trim();
+      const cluster = document.getElementById('cluster').value.trim() || 'eu';
+      if(!key){ alert('Lütfen PUSHER_KEY girin'); return }
+      doConnect(key, cluster);
+    });
+
+    document.getElementById('disconnect').addEventListener('click', ()=>{
+      if(pusher){
+        try{ pusher.disconnect(); }catch(e){}
+        pusher = null; channels = {};
+        log('Disconnected');
+      }
+      document.getElementById('connect').disabled = false;
+      document.getElementById('disconnect').disabled = true;
+    });
+
+    document.getElementById('sub').addEventListener('click', ()=>{
+      const id = document.getElementById('matchId').value.trim();
+      if(!id || !pusher){ alert('Önce bağlanın ve geçerli bir id girin'); return }
+      const chan = 'match-' + id;
+      if(channels[chan]){ alert('Zaten abone'); return }
+      const c = pusher.subscribe(chan);
+      c.bind('match-update', (d)=> log(chan + ':match-update — ' + JSON.stringify(d)));
+      channels[chan] = c;
+      log('Subscribed to ' + chan);
+    });
+
+    document.getElementById('unsub').addEventListener('click', ()=>{
+      const id = document.getElementById('matchId').value.trim();
+      const chan = 'match-' + id;
+      if(!channels[chan]){ alert('Abonelik yok'); return }
+      pusher.unsubscribe(chan);
+      delete channels[chan];
+      log('Unsubscribed ' + chan);
+    });
+
+    // On load, try to auto-connect using one of these sources (in order):
+    // 1) window.PUSHER_PUBLIC_KEY (embedded file), 2) /api/pusher_key endpoint
+    (async function tryAutoConnect(){
+      try{
+        if(window.PUSHER_PUBLIC_KEY){
+          const key = window.PUSHER_PUBLIC_KEY;
+          const cluster = window.PUSHER_PUBLIC_CLUSTER || document.getElementById('cluster').value || 'eu';
+          document.getElementById('key').value = key;
+          document.getElementById('cluster').value = cluster;
+          doConnect(key, cluster);
+          log('Auto-loaded Pusher key from demo/pusher_public.js');
+          return;
+        }
+
+        // fallback: try server endpoint
+        const resp = await fetch('/api/pusher_key');
+        if(!resp.ok) throw new Error('no key');
+        const j = await resp.json();
+        if(j && j.pusher_key){
+          document.getElementById('key').value = j.pusher_key;
+          document.getElementById('cluster').value = j.pusher_cluster || 'eu';
+          // auto-connect
+          doConnect(j.pusher_key, j.pusher_cluster || 'eu');
+          log('Auto-loaded Pusher key from /api/pusher_key');
+        }
+      }catch(e){
+        // ignore — user can paste key manually
+        console.debug('Auto-load pusher key failed:', e.message);
+      }
+    })();
+  </script>
+</body>
+</html>
