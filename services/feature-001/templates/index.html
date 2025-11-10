@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Football Fixtures Fetcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        select, input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .success {
+            background: #efe;
+            color: #080;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success.show {
+            display: block;
+        }
+        
+        .fixtures-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .fixtures-table thead {
+            background: #f5f5f5;
+        }
+        
+        .fixtures-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .fixtures-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+        
+        .fixtures-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .fixture-score {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .fixture-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-notstarted {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .status-live {
+            background: #fff3e0;
+            color: #f57c00;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-finished {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 40px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .fixtures-table {
+                font-size: 0.9rem;
+            }
+            
+            .fixtures-table th, .fixtures-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚽ E-Football Fixtures</h1>
+            <p>Browse match fixtures from RapidAPI</p>
+        </header>
+        
+        <div class="card">
+            <div class="controls">
+                <div class="form-group">
+                    <label for="league">🏆 League</label>
+                    <select id="league">
+                        <option value="39">Premier League (England)</option>
+                        <option value="140">La Liga (Spain)</option>
+                        <option value="135">Serie A (Italy)</option>
+                        <option value="78">Bundesliga (Germany)</option>
+                        <option value="61">Ligue 1 (France)</option>
+                        <option value="1">World Cup</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="season">📅 Season</label>
+                    <input type="number" id="season" min="2015" max="2025" value="2023">
+                </div>
+                
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button id="fetchBtn" onclick="fetchFixtures()">Fetch Fixtures</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button id="exportBtn" onclick="exportJSON()" style="background: #888;" disabled>Export JSON</button>
+                </div>
+            </div>
+            
+            <div id="error" class="error"></div>
+            <div id="success" class="success"></div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Fetching fixtures...</p>
+            </div>
+            
+            <div id="results">
+                <div class="empty-state">
+                    <p>👆 Select league and season, then click "Fetch Fixtures"</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>🔌 Powered by RapidAPI e-football v1 | Feature 001 - efootball-feeder</p>
+        </footer>
+    </div>
+    
+    <script>
+        let lastFixtures = null;
+        
+        async function fetchFixtures() {
+            const league = document.getElementById("league").value;
+            const season = document.getElementById("season").value;
+            const errorDiv = document.getElementById("error");
+            const successDiv = document.getElementById("success");
+            const loadingDiv = document.getElementById("loading");
+            const resultsDiv = document.getElementById("results");
+            const fetchBtn = document.getElementById("fetchBtn");
+            const exportBtn = document.getElementById("exportBtn");
+            
+            errorDiv.classList.remove("show");
+            successDiv.classList.remove("show");
+            loadingDiv.classList.add("show");
+            fetchBtn.disabled = true;
+            
+            try {
+                const response = await fetch("/api/fixtures", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ league: parseInt(league), season: parseInt(season) })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || "Failed to fetch fixtures");
+                }
+                
+                const data = await response.json();
+                lastFixtures = data.fixtures;
+                
+                loadingDiv.classList.remove("show");
+                successDiv.textContent = `✓ Loaded ${data.count} fixtures`;
+                successDiv.classList.add("show");
+                exportBtn.disabled = false;
+                
+                renderFixtures(data.fixtures);
+            } catch (error) {
+                loadingDiv.classList.remove("show");
+                errorDiv.textContent = `✗ Error: ${error.message}`;
+                errorDiv.classList.add("show");
+                resultsDiv.innerHTML = '<div class="empty-state"><p>❌ Failed to load fixtures</p></div>';
+                exportBtn.disabled = true;
+            } finally {
+                fetchBtn.disabled = false;
+            }
+        }
+        
+        function renderFixtures(fixtures) {
+            const resultsDiv = document.getElementById("results");
+            
+            if (!fixtures || fixtures.length === 0) {
+                resultsDiv.innerHTML = '<div class="empty-state"><p>📭 No fixtures found</p></div>';
+                return;
+            }
+            
+            let html = `
+                <table class="fixtures-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Home Team</th>
+                            <th>Away Team</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            fixtures.slice(0, 50).forEach(fixture => {
+                const date = new Date(fixture.fixture.date);
+                const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+                
+                const homeTeam = fixture.teams.home.name || "Unknown";
+                const awayTeam = fixture.teams.away.name || "Unknown";
+                const homeGoals = fixture.goals.home !== null ? fixture.goals.home : "-";
+                const awayGoals = fixture.goals.away !== null ? fixture.goals.away : "-";
+                
+                let status = fixture.fixture.status.short || "TBD";
+                let statusClass = "status-notstarted";
+                if (status === "LIVE" || status === "1H" || status === "2H") {
+                    statusClass = "status-live";
+                } else if (status === "FT" || status === "AET" || status === "PEN") {
+                    statusClass = "status-finished";
+                }
+                
+                html += `
+                    <tr>
+                        <td>${dateStr}<br><small>${timeStr}</small></td>
+                        <td><strong>${homeTeam}</strong></td>
+                        <td><strong>${awayTeam}</strong></td>
+                        <td class="fixture-score">${homeGoals} - ${awayGoals}</td>
+                        <td><span class="fixture-status ${statusClass}">${status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function exportJSON() {
+            if (!lastFixtures) return;
+            
+            const data = JSON.stringify(lastFixtures, null, 2);
+            const blob = new Blob([data], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `fixtures_${new Date().toISOString().split("T")[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Keyboard shortcut: Enter to fetch
+        document.getElementById("season").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") fetchFixtures();
+        });
+    </script>
+</body>
+</html>
