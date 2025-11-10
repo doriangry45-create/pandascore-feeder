@@ -1,0 +1,16 @@
+ai:
+  primary: claude
+conventions:
+  branch_naming: '{number:03d}-{feature-name}'
+  plan_naming: plan-{number:03d}.md
+  spec_naming: spec-{number:03d}.md
+  task_naming: task-{number:03d}.md
+project:
+  created: '2025-11-10T20:24:24.253466'
+  name: efootball-feeder
+  type: web
+templates:
+  plan: .specpulse/templates/plan.md
+  spec: .specpulse/templates/spec.md
+  task: .specpulse/templates/task.md
+version: 2.6.0

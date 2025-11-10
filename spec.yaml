@@ -1,0 +1,19 @@
+project:
+  name: efootball-feeder
+  description: RapidAPI üzerinden e-futbol maç verisi çeken veri besleme projesi
+  version: 1.0.0
+
+apis:
+  - name: efootball-api
+    provider: rapidapi
+    base_url: https://api-football-v1.p.rapidapi.com/v3
+    endpoints:
+      - path: /fixtures
+        method: GET
+        description: Maç fikstürlerini getir
+        headers:
+          X-RapidAPI-Key: ${RAPIDAPI_KEY}
+          X-RapidAPI-Host: api-football-v1.p.rapidapi.com
+        query:
+          league: 39
+          season: 2023
